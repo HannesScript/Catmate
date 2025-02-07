@@ -1,0 +1,5 @@
+lichess-data/
+__pycache__/
+*.pyc
+games_played_sf.txt
+train/
