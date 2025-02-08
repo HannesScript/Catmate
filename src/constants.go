@@ -96,3 +96,14 @@ var pieceValues = map[string]int{
 	"q": 90,
 	"k": 2000,
 }
+
+// /////////////////////////// Event values
+
+var eventValues = map[string]int{
+	"checkmate": 10000,
+	"stalemate": 0,
+	"draw":      0,
+	"check":     100,
+	"promotion": 50,
+	"castling":  50,
+}
