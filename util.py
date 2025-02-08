@@ -41,4 +41,5 @@ def get_board_fen(board: chess.Board) -> str:
         fen += "q"
     if not (board.has_kingside_castling_rights(chess.WHITE) or board.has_queenside_castling_rights(chess.WHITE) or board.has_kingside_castling_rights(chess.BLACK) or board.has_queenside_castling_rights(chess.BLACK)):
         fen += "-"
+    print(fen)
     return fen

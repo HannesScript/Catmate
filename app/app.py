@@ -18,7 +18,7 @@ DARK_BROWN = (170, 126, 89)
 SELECT_COLOR = (0, 255, 0)
 
 # Tiefe der Suche
-DEPTH = 1
+DEPTH = 5
 
 # Bilder der Figuren laden
 PIECE_IMAGES = {}

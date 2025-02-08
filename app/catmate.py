@@ -2,8 +2,8 @@ import subprocess
 
 def run(executable_path: str, fen_string: str, depth: int, database: str) -> str:
     try:
-        result = subprocess.run([executable_path, f"\"{fen_string}\"", depth, database])    # This process will run the executable with the given arguments, which prints out something like "e2e4" to stdout
-        return result.stdout.decode('utf-8').strip()    # This will return the output of the process
+        result = subprocess.run([executable_path, fen_string, str(depth), database], capture_output=True, text=True)
+        return result.stdout.strip()
     except Exception as e:
         print(f"Error running Catmate: {e}")
         return ""
