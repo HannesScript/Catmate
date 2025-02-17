@@ -1,198 +1,97 @@
 package main
 
-func (b *Board) IsKingInCheck(color Color) bool {
-	var kingX, kingY int
-	for y := 0; y < 8; y++ {
-		for x := 0; x < 8; x++ {
-			p := b.GetPiece(x, y)
-			if p != nil && p.Type == King && p.Color == color {
-				kingX, kingY = x, y
-				break
-			}
-		}
-	}
-	enemy := White
+import "math/bits"
+
+// IsKingInCheck returns true if the king for the given color is under attack.
+func (b *Board) IsKingInCheck(color int) bool {
+	var kingBB Bitboard
 	if color == White {
-		enemy = Black
+		kingBB = b.wk
+	} else {
+		kingBB = b.bk
 	}
-	for y := 0; y < 8; y++ {
-		for x := 0; x < 8; x++ {
-			p := b.GetPiece(x, y)
-			if p != nil && p.Color == enemy {
-				for _, m := range generatePieceMoves(b, x, y) {
-					if m.ToX == kingX && m.ToY == kingY {
-						return true
-					}
-				}
-			}
+	if kingBB == 0 {
+		// Should never happen
+		return false
+	}
+	kingSq := bits.TrailingZeros64(uint64(kingBB))
+	// Set enemy color.
+	enemy := Black
+	if color == Black {
+		enemy = White
+	}
+	// Create a temporary board with enemy's turn to generate moves.
+	temp := *b
+	temp.Turn = enemy
+	moves := generateMovesBB(&temp)
+	for _, m := range moves {
+		if m.to == kingSq {
+			return true
 		}
 	}
 	return false
 }
 
-// Should return true if any of the kings are in checkmate
-func isCheckmate(board *Board) bool {
-	// Find the kings
-	var whiteKing, blackKing *Piece
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			piece := board.GetPiece(i, j)
-			if piece != nil && piece.Type == King {
-				if piece.Color == White {
-					whiteKing = piece
-				} else {
-					blackKing = piece
-				}
-			}
-		}
+// isCheckmate returns true if the side to move has no legal moves and is in check.
+func isCheckmate(b *Board) bool {
+	// Only the side to move can be checkmated.
+	if !b.IsKingInCheck(b.Turn) {
+		return false
 	}
-	if whiteKing == nil || blackKing == nil {
-		panic("Could not find both kings")
-	}
-
-	// Check if any of the kings are in checkmate
-	if isCheckmateForKing(board, whiteKing) {
-		return true
-	}
-	if isCheckmateForKing(board, blackKing) {
-		return true
-	}
-	return false
-}
-
-// Should return true if the given king is in checkmate
-func isCheckmateForKing(board *Board, king *Piece) bool {
-	// Find all moves for the king
-	kingX, kingY := -1, -1
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			piece := board.GetPiece(i, j)
-			if piece == king {
-				kingX, kingY = i, j
-				break
-			}
-		}
-	}
-	if kingX == -1 || kingY == -1 {
-		panic("Could not find king on board")
-	}
-	kingMoves := generateKingMoves(board, kingX, kingY)
-
-	// Check if any of the moves are legal
-	for _, move := range kingMoves {
-		newBoard := board.Copy()
-		newBoard.ApplyMove(move)
-		if !newBoard.IsKingInCheck(king.Color) {
+	moves := generateMovesBB(b)
+	for _, m := range moves {
+		newBoard := applyMove(*b, m)
+		if !newBoard.IsKingInCheck(b.Turn) {
 			return false
 		}
 	}
 	return true
 }
 
-// Should return true if any king is in stalemate
-func isStalemate(board *Board) bool {
-	// Find the kings
-	var whiteKing, blackKing *Piece
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			piece := board.GetPiece(i, j)
-			if piece != nil && piece.Type == King {
-				if piece.Color == White {
-					whiteKing = piece
-				} else {
-					blackKing = piece
-				}
-			}
-		}
+// isStalemate returns true if the side to move is not in check but has no legal moves.
+func isStalemate(b *Board) bool {
+	if b.IsKingInCheck(b.Turn) {
+		return false
 	}
-	if whiteKing == nil || blackKing == nil {
-		panic("Could not find both kings")
-	}
+	moves := generateMovesBB(b)
+	return len(moves) == 0
+}
 
-	// Check if any of the kings are in stalemate
-	if isStalemateForKing(board, whiteKing) {
+// isDraw returns true if the game is drawn (by stalemate or insufficient material).
+func isDraw(b *Board) bool {
+	if isStalemate(b) {
 		return true
 	}
-	if isStalemateForKing(board, blackKing) {
+	if isInsufficientMaterial(b) {
 		return true
 	}
 	return false
 }
 
-// Should return true if the given king is in stalemate
-func isStalemateForKing(board *Board, king *Piece) bool {
-	// Find all moves for the king
-	kingX, kingY := -1, -1
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			piece := board.GetPiece(i, j)
-			if piece == king {
-				kingX, kingY = i, j
-				break
-			}
-		}
-	}
-	if kingX == -1 || kingY == -1 {
-		panic("Could not find king on board")
-	}
-	kingMoves := generateKingMoves(board, kingX, kingY)
-
-	// Check if any of the moves are legal
-	for _, move := range kingMoves {
-		newBoard := board.Copy()
-		newBoard.ApplyMove(move)
-		if !newBoard.IsKingInCheck(king.Color) {
-			return false
-		}
-	}
-	return true
+// isInsufficientMaterial returns true if neither side has enough material to force a checkmate.
+func isInsufficientMaterial(b *Board) bool {
+	// Count non-king pieces.
+	whiteNonKing := popCount(b.wp) + popCount(b.wn) + popCount(b.wb) + popCount(b.wr) + popCount(b.wq)
+	blackNonKing := popCount(b.bp) + popCount(b.bn) + popCount(b.bb) + popCount(b.br) + popCount(b.bq)
+	return whiteNonKing == 0 && blackNonKing == 0
 }
 
-// Should return true if the game is a draw
-func isDraw(board *Board) bool {
-	// Check if the game is a draw
-	if isStalemate(board) {
-		return true
-	}
-	if isInsufficientMaterial(board) {
-		return true
-	}
-	return false
-}
-
-// Should return true if the game is a draw due to insufficient material
-func isInsufficientMaterial(board *Board) bool {
-	// Check if the game is a draw due to insufficient material
-	// Only kings are left
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			piece := board.GetPiece(i, j)
-			if piece != nil && piece.Type != King {
-				return false
-			}
+// isCastling returns true if either king is in a castled position.
+// (This implementation assumes that castling leaves the king on g1/c1 or g8/c8.)
+func isCastling(b *Board) bool {
+	if b.wk != 0 {
+		kingSq := bits.TrailingZeros64(uint64(b.wk))
+		// White king on g1 (6) or c1 (2)
+		if kingSq == 6 || kingSq == 2 {
+			return true
 		}
 	}
-	return true
-}
-
-// Should return true if any king has castled
-func isCastling(board *Board) bool {
-	// Check if any king has castled
-	// White king-side
-	if board.GetPiece(4, 0).Type == King && board.GetPiece(7, 0).Type == Rook {
-		return true
-	}
-	// White queen-side
-	if board.GetPiece(4, 0).Type == King && board.GetPiece(0, 0).Type == Rook {
-		return true
-	}
-	// Black king-side
-	if board.GetPiece(4, 7).Type == King && board.GetPiece(7, 7).Type == Rook {
-		return true
-	}
-	// Black queen-side
-	if board.GetPiece(4, 7).Type == King && board.GetPiece(0, 7).Type == Rook {
-		return true
+	if b.bk != 0 {
+		kingSq := bits.TrailingZeros64(uint64(b.bk))
+		// Black king on g8 (62) or c8 (58)
+		if kingSq == 62 || kingSq == 58 {
+			return true
+		}
 	}
 	return false
 }

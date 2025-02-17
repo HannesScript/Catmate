@@ -1,113 +1,89 @@
 package main
 
 import (
-	"strings"
-	"unicode"
+	"log"
+	"math/bits"
 )
 
-func evaluateBoard(board *Board) int {
+func evaluateBoard(b *Board) int {
 	score := 0
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			piece := board.position[i][j]
-			index := i*8 + j
 
-			// Simple heuristic to detect endgame by counting non-king pieces
-			endgame := func() bool {
-				var count int
-				for i := 0; i < 8; i++ {
-					for j := 0; j < 8; j++ {
-						p := board.position[i][j]
-						if p != ' ' && unicode.ToLower(p) != 'k' {
-							count++
-						}
-					}
-				}
-				// Adjust threshold to taste (example: <= 12)
-				return count <= 10
-			}()
+	// Determine endgame by counting all non-king pieces.
+	nonKingCount := bits.OnesCount64(uint64(b.wp)) +
+		bits.OnesCount64(uint64(b.wn)) +
+		bits.OnesCount64(uint64(b.wb)) +
+		bits.OnesCount64(uint64(b.wr)) +
+		bits.OnesCount64(uint64(b.wq)) +
+		bits.OnesCount64(uint64(b.bp)) +
+		bits.OnesCount64(uint64(b.bn)) +
+		bits.OnesCount64(uint64(b.bb)) +
+		bits.OnesCount64(uint64(b.br)) +
+		bits.OnesCount64(uint64(b.bq))
+	endgame := nonKingCount <= 10
 
-			// Piece values
-			for i := 0; i < 8; i++ {
-				for j := 0; j < 8; j++ {
-					p := board.position[i][j]
-					if p != ' ' && unicode.ToLower(p) != 'k' {
-						if unicode.IsUpper(p) {
-							score += pieceValues[strings.ToLower(string(p))]
-						} else {
-							score -= pieceValues[strings.ToLower(string(p))]
-						}
-					}
-				}
-			}
-
-			switch piece {
-			case 'P':
-				score += pawnTable[index]
-			case 'p':
-				score -= pawnTable[index]
-			case 'N':
-				score += knightTable[index]
-			case 'n':
-				score -= knightTable[index]
-			case 'B':
-				score += bishopTable[index]
-			case 'b':
-				score -= bishopTable[index]
-			case 'R':
-				score += rookTable[index]
-			case 'r':
-				score -= rookTable[index]
-			case 'Q':
-				score += queenTable[index]
-			case 'q':
-				score -= queenTable[index]
-			case 'K':
-				if endgame {
-					score += kingEndgameTable[index]
-				} else {
-					score += kingOpeningTable[index]
-				}
-			case 'k':
-				if endgame {
-					score -= kingEndgameTable[index]
-				} else {
-					score -= kingOpeningTable[index]
-				}
-			}
-		}
+	// Evaluate white pieces.
+	whitePieces := []struct {
+		bb    Bitboard
+		value int
+		table [64]int
+	}{
+		{b.wp, pieceValues["p"], pawnTable},
+		{b.wn, pieceValues["n"], knightTable},
+		{b.wb, pieceValues["b"], bishopTable},
+		{b.wr, pieceValues["r"], rookTable},
+		{b.wq, pieceValues["q"], queenTable},
 	}
 
-	// ///// Handle Events (e.g. checkmate, castling, check, etc.)
-	// // Checkmate
-	//if isCheckmate(board) {
-	//	if board.Turn == White {
-	//		score -= eventValues["checkmate"]
-	//	}
-	//	score += eventValues["checkmate"]
-	//}
-	// // Stalemate
-	//if isStalemate(board) {
-	//	score += eventValues["stalemate"]
-	//}
-	// // Draw
-	//if isDraw(board) {
-	//	score += eventValues["draw"]
-	//}
-	// // Check
-	//if board.IsKingInCheck(board.Turn) {
-	//	if board.Turn == White {
-	//		score -= eventValues["check"]
-	//	}
-	//	score += eventValues["check"]
-	//}
-	// // Castling
-	//if isCastling(board) {
-	//	if board.Turn == White {
-	//		score -= eventValues["castling"]
-	//	}
-	//	score += eventValues["castling"]
-	//}
+	for _, piece := range whitePieces {
+		score += evaluatePiece(piece.bb, piece.value, piece.table)
+	}
+	score += evaluateKing(b.wk, endgame)
+
+	// Evaluate black pieces (subtract their values).
+	blackPieces := []struct {
+		bb    Bitboard
+		value int
+		table [64]int
+	}{
+		{b.bp, pieceValues["p"], pawnTable},
+		{b.bn, pieceValues["n"], knightTable},
+		{b.bb, pieceValues["b"], bishopTable},
+		{b.br, pieceValues["r"], rookTable},
+		{b.bq, pieceValues["q"], queenTable},
+	}
+
+	for _, piece := range blackPieces {
+		score -= evaluatePiece(piece.bb, piece.value, piece.table)
+	}
+	score -= evaluateKing(b.bk, endgame)
 
 	return score
+}
+
+// evaluatePiece iterates over a bitboard for a given piece type and returns its material value plus table bonus.
+func evaluatePiece(bb Bitboard, value int, table [64]int) int {
+	score := 0
+	for bb != 0 {
+		sq := bits.TrailingZeros64(uint64(bb))
+		score += value + table[sq]
+		bb &= bb - 1 // clear the lowest set bit
+	}
+	return score
+}
+
+// evaluateKing returns the king's positional bonus.
+// Logs a warning if the king bitboard is empty or holds more than one bit.
+func evaluateKing(bb Bitboard, endgame bool) int {
+	if bb == 0 {
+		log.Println("Warning: king bitboard is empty")
+		return 0
+	}
+	if bb&(bb-1) != 0 {
+		log.Println("Warning: king bitboard has multiple bits set")
+	}
+	sq := bits.TrailingZeros64(uint64(bb))
+	if endgame {
+		return kingEndgameTable[sq]
+	}
+	return kingOpeningTable[sq]
 }

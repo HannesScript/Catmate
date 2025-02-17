@@ -3,119 +3,176 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
-	"math"
+	"math/bits"
 	"os"
 	"strconv"
 	"strings"
-	"unicode"
 )
 
-var DB map[string]string
+// Bitboard type
+type Bitboard uint64
 
-type Move struct {
-	FromX, FromY, ToX, ToY int
-}
-
-type Color int
-
+// Turn constants
 const (
-	White Color = iota
-	Black
+	White = 0
+	Black = 1
 )
 
-type PieceType int
-
-const (
-	Pawn PieceType = iota
-	Knight
-	Bishop
-	Rook
-	Queen
-	King
-)
-
-type Piece struct {
-	Type  PieceType
-	Color Color
-	X     int
-	Y     int
-}
-
+// Board holds one bitboard per piece type.
 type Board struct {
-	position       [8][8]rune
-	Turn           Color
-	CastlingRights string
+	// White pieces
+	wp, wn, wb, wr, wq, wk Bitboard
+	// Black pieces
+	bp, bn, bb, br, bq, bk Bitboard
+	Turn                   int
 }
 
-func (b *Board) IsOnBoard(x, y int) bool {
-	return x >= 0 && x < 8 && y >= 0 && y < 8
-}
+// parseFEN is a simplified parser that only recognizes the starting position.
+// A full FEN parser must set each bitboard appropriately.
+func parseFEN(fen string) Board {
+	var board Board
 
-func (b *Board) GetPiece(x, y int) *Piece {
-	if !b.IsOnBoard(x, y) {
-		return nil
+	// Set the bitboards for the position specified in the FEN.
+	// Recognize the FEN and initialize bitboards accordingly.
+	fields := strings.Fields(fen)
+	ranks := strings.Split(fields[0], "/")
+	for r, row := range ranks {
+		file := 0
+		for _, c := range row {
+			if c >= '1' && c <= '8' {
+				file += int(c - '0')
+			} else {
+				square := (7-r)*8 + file
+				switch c {
+				case 'P':
+					board.wp |= 1 << square
+				case 'N':
+					board.wn |= 1 << square
+				case 'B':
+					board.wb |= 1 << square
+				case 'R':
+					board.wr |= 1 << square
+				case 'Q':
+					board.wq |= 1 << square
+				case 'K':
+					board.wk |= 1 << square
+				case 'p':
+					board.bp |= 1 << square
+				case 'n':
+					board.bn |= 1 << square
+				case 'b':
+					board.bb |= 1 << square
+				case 'r':
+					board.br |= 1 << square
+				case 'q':
+					board.bq |= 1 << square
+				case 'k':
+					board.bk |= 1 << square
+				}
+				file++
+			}
+		}
 	}
-	r := b.position[y][x]
-	if r == ' ' {
-		return nil
-	}
-	p := &Piece{}
-	if r >= 'A' && r <= 'Z' {
-		p.Color = White
+
+	// Determine turn from FEN; assume standard starting FEN.
+	if len(fields) >= 2 && fields[1] == "b" {
+		board.Turn = Black
 	} else {
-		p.Color = Black
+		board.Turn = White
 	}
-	switch r {
-	case 'P', 'p':
-		p.Type = Pawn
-	case 'N', 'n':
-		p.Type = Knight
-	case 'B', 'b':
-		p.Type = Bishop
-	case 'R', 'r':
-		p.Type = Rook
-	case 'Q', 'q':
-		p.Type = Queen
-	case 'K', 'k':
-		p.Type = King
+	return board
+}
+
+// Move represents a move from one square to another.
+// Here squares are numbered 0..63 (a1 is 0, h8 is 63).
+type Move struct {
+	from, to int
+}
+
+func (m Move) String() string {
+	return fmt.Sprintf("%c%d%c%d", 'a'+m.from%8, 1+m.from/8, 'a'+m.to%8, 1+m.to/8)
+}
+
+// occupied returns a bitboard of all occupied squares.
+func occupied(b *Board) Bitboard {
+	return b.wp | b.wn | b.wb | b.wr | b.wq | b.wk |
+		b.bp | b.bn | b.bb | b.br | b.bq | b.bk
+}
+
+// generateMoves creates a move list; here we demonstrate only white pawn single pushes.
+func generateMoves(b *Board) []Move {
+	var moves []Move
+	if b.Turn == White {
+		// White pawns move one square up (i.e. shift left by 8 bits)
+		singlePush := (b.wp << 8) &^ occupied(b)
+		for singlePush != 0 {
+			toSquare := bits.TrailingZeros64(uint64(singlePush))
+			fromSquare := toSquare - 8
+			moves = append(moves, Move{from: fromSquare, to: toSquare})
+			singlePush &= singlePush - 1
+		}
+	} else {
+		// Similarly you would generate moves for black pawns (shift right by 8)
+		singlePush := (b.bp >> 8) &^ occupied(b)
+		for singlePush != 0 {
+			toSquare := bits.TrailingZeros64(uint64(singlePush))
+			fromSquare := toSquare + 8
+			moves = append(moves, Move{from: fromSquare, to: toSquare})
+			singlePush &= singlePush - 1
+		}
 	}
-	return p
+	return moves
 }
 
-func (b *Board) Copy() *Board {
-	newBoard := *b
-	return &newBoard
-}
+// applyMove returns a new board after applying the given move.
+// For demonstration, we update only white pawn moves.
+func applyMove(b Board, move Move) Board {
+	fromMask := Bitboard(1) << move.from
+	toMask := Bitboard(1) << move.to
 
-func (b *Board) ApplyMove(move Move) {
-	piece := b.GetPiece(move.FromX, move.FromY)
-	if piece != nil {
-		piece.X = move.ToX
-		piece.Y = move.ToY
+	// Remove any captured piece (basic example – in a full engine you would check all piece bitboards)
+	if b.Turn == White {
+		if b.bp&toMask != 0 {
+			b.bp &^= toMask
+		}
+		// Update white pawn bitboard:
+		if b.wp&fromMask != 0 {
+			b.wp &^= fromMask
+			b.wp |= toMask
+		}
+	} else {
+		if b.wp&toMask != 0 {
+			b.wp &^= toMask
+		}
+		if b.bp&fromMask != 0 {
+			b.bp &^= fromMask
+			b.bp |= toMask
+		}
 	}
-	b.position[move.ToY][move.ToX] = b.position[move.FromY][move.FromX]
-	b.position[move.FromY][move.FromX] = ' '
+	// Switch turn
+	if b.Turn == White {
+		b.Turn = Black
+	} else {
+		b.Turn = White
+	}
+	return b
 }
 
-func isMoveLegal(board *Board, move Move) bool {
-	cpy := board.Copy()
-	cpy.ApplyMove(move)
-	return !cpy.IsKingInCheck(board.Turn)
+func popCount(bb Bitboard) int {
+	return bits.OnesCount64(uint64(bb))
 }
 
-func minimax(board *Board, depth, alpha, beta int, maximizing bool) int {
+// minimax with alpha-beta pruning.
+func minimax(b Board, depth, alpha, beta int, maximizing bool) int {
 	if depth == 0 {
-		return evaluateBoard(board)
+		return evaluateBoard(&b)
 	}
-	moves := generateMoves(board)
+	moves := generateMoves(&b)
 	if maximizing {
-		best := math.MinInt
-		for _, move := range moves {
-			board.ApplyMove(move)
-			val := minimax(board, depth-1, alpha, beta, false)
-			board.position[move.FromY][move.FromX] = board.position[move.ToY][move.ToX]
-			board.position[move.ToY][move.ToX] = ' '
+		best := -1000000
+		for _, m := range moves {
+			newB := applyMove(b, m)
+			val := minimax(newB, depth-1, alpha, beta, false)
 			if val > best {
 				best = val
 			}
@@ -127,39 +184,37 @@ func minimax(board *Board, depth, alpha, beta int, maximizing bool) int {
 			}
 		}
 		return best
+	} else {
+		best := 1000000
+		for _, m := range moves {
+			newB := applyMove(b, m)
+			val := minimax(newB, depth-1, alpha, beta, true)
+			if val < best {
+				best = val
+			}
+			if best < beta {
+				beta = best
+			}
+			if beta <= alpha {
+				break
+			}
+		}
+		return best
 	}
-	best := math.MaxInt
-	for _, move := range moves {
-		board.ApplyMove(move)
-		val := minimax(board, depth-1, alpha, beta, true)
-		board.position[move.FromY][move.FromX] = board.position[move.ToY][move.ToX]
-		board.position[move.ToY][move.ToX] = ' '
-		if val < best {
-			best = val
-		}
-		if best < beta {
-			beta = best
-		}
-		if beta <= alpha {
-			break
-		}
-	}
-	return best
 }
 
-func findBestMove(board *Board, depth int) Move {
-	bestMove := Move{}
-	bestScore := math.MinInt
-	alpha, beta := math.MinInt, math.MaxInt
-	moves := generateMoves(board)
-	for _, move := range moves {
-		board.ApplyMove(move)
-		score := minimax(board, depth-1, alpha, beta, false)
-		board.position[move.FromY][move.FromX] = board.position[move.ToY][move.ToX]
-		board.position[move.ToY][move.ToX] = ' '
+// findBestMove determines the move with the best evaluation.
+func findBestMove(b Board, depth int) Move {
+	bestScore := -1000000
+	var bestMove Move
+	moves := generateMoves(&b)
+	alpha, beta := -1000000, 1000000
+	for _, m := range moves {
+		newB := applyMove(b, m)
+		score := minimax(newB, depth-1, alpha, beta, false)
 		if score > bestScore {
 			bestScore = score
-			bestMove = move
+			bestMove = m
 		}
 		if bestScore > alpha {
 			alpha = bestScore
@@ -171,113 +226,47 @@ func findBestMove(board *Board, depth int) Move {
 	return bestMove
 }
 
-// loadDB reads a file and returns a mapping from FEN to move (in UCI format).
-func loadDB(filename string) map[string]string {
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Printf("Could not open DB file: %v", err)
-		return nil
-	}
-	defer f.Close()
-
-	db := make(map[string]string)
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		fen := strings.TrimSpace(parts[0])
-		move := strings.TrimSpace(parts[1])
-		db[fen] = move
-	}
-	return db
-}
-
-func parseFEN(fen_string string) Board {
-	// This function should take in a FEN-String like "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"
-	// and it should return a Board with castling rights support.
-	// Note: Ensure that the Board struct is updated to include a CastlingRights field,
-	// e.g., CastlingRights string
-
-	board := Board{}
-	parts := strings.Split(fen_string, " ")
-	ranks := strings.Split(parts[0], "/")
-	for row := 0; row < 8; row++ {
-		file := 0
-		for _, c := range ranks[row] {
-			if unicode.IsDigit(c) {
-				skip := int(c - '0')
-				for i := 0; i < skip; i++ {
-					board.position[row][file] = ' '
-					file++
-				}
-			} else {
-				board.position[row][file] = rune(c)
-				file++
-			}
-		}
-	}
-	if len(parts) > 1 && parts[1] == "w" {
-		board.Turn = White
-	} else {
-		board.Turn = Black
-	}
-
-	// Parse castling rights if provided. If no castling rights, FEN provides "-"
-	if len(parts) > 2 && parts[2] != "-" {
-		board.CastlingRights = parts[2]
-	} else {
-		board.CastlingRights = ""
-	}
-	return board
-}
-
-func parseMove(move Move) string {
-	// Parse something like "{1 0 2 2}" into something like "e2e4"
-	fileFrom := 'a' + rune(move.FromX)
-	rankFrom := '8' - rune(move.FromY)
-	fileTo := 'a' + rune(move.ToX)
-	rankTo := '8' - rune(move.ToY)
-	return fmt.Sprintf("%c%d%c%d", fileFrom, rankFrom-'0', fileTo, rankTo-'0')
-}
-
 func main() {
 	// Command line args: "<FEN>" <depth> <dbFile>
 	if len(os.Args) != 4 {
 		fmt.Println("Usage: \"<FEN>\" <depth> <dbFile>")
 		return
 	}
-
 	fen := os.Args[1]
 	depth, err := strconv.Atoi(os.Args[2])
 	if err != nil {
-		log.Fatalf("Invalid depth: %v", err)
+		fmt.Printf("Invalid depth: %v\n", err)
+		return
 	}
+
 	dbFile := os.Args[3]
 
 	if dbFile != "None" {
-		DB = loadDB(dbFile)
-	}
+		file, err := os.Open(dbFile)
+		if err != nil {
+			fmt.Println("Can't open DB:", err)
+			return
+		}
+		defer file.Close()
 
-	gameFen := parseFEN(fen)
+		scanner := bufio.NewScanner(file)
+		var foundMove string
+		for scanner.Scan() {
+			line := scanner.Text()
+			parts := strings.Split(line, " : ")
+			if len(parts) == 2 && strings.HasPrefix(parts[0], fen) {
+				foundMove = parts[1]
+				break
+			}
+		}
 
-	if dbFile != "None" {
-		if candidate, ok := DB[fen]; ok && candidate != "" {
-			fmt.Println(candidate)
+		if foundMove != "" {
+			fmt.Println(foundMove)
 			return
 		}
 	}
 
-	move := findBestMove(&gameFen, depth)
-	if move == (Move{}) {
-		fmt.Println("No valid move found")
-	} else {
-		moveString := parseMove(move)
-		fmt.Println(moveString)
-	}
+	board := parseFEN(fen)
+	move := findBestMove(board, depth)
+	fmt.Println(move.String())
 }

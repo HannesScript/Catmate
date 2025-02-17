@@ -1,8 +1,6 @@
 package main
 
-// /////////////////////////// Evaluation tables for pieces
-
-// Pawn
+// Evaluation tables remain as 64-element arrays, one per square.
 var pawnTable = [64]int{
 	0, 5, 5, -10, -10, 5, 5, 0,
 	0, 10, -5, 0, 0, -5, 10, 0,
@@ -14,7 +12,6 @@ var pawnTable = [64]int{
 	0, 0, 0, 0, 0, 0, 0, 0,
 }
 
-// Knight
 var knightTable = [64]int{
 	-50, -40, -30, -30, -30, -30, -40, -50,
 	-40, -20, 0, 0, 0, 0, -20, -40,
@@ -26,7 +23,6 @@ var knightTable = [64]int{
 	-50, -40, -30, -30, -30, -30, -40, -50,
 }
 
-// Bishop
 var bishopTable = [64]int{
 	-20, -10, -10, -10, -10, -10, -10, -20,
 	-10, 5, 0, 0, 0, 0, 5, -10,
@@ -38,7 +34,6 @@ var bishopTable = [64]int{
 	-20, -10, -10, -10, -10, -10, -10, -20,
 }
 
-// Rook
 var rookTable = [64]int{
 	0, 0, 0, 5, 5, 0, 0, 0,
 	-5, 0, 0, 0, 0, 0, 0, -5,
@@ -50,7 +45,6 @@ var rookTable = [64]int{
 	0, 0, 0, 0, 0, 0, 0, 0,
 }
 
-// Queen
 var queenTable = [64]int{
 	-20, -10, -10, -5, -5, -10, -10, -20,
 	-10, 0, 0, 0, 0, 0, 0, -10,
@@ -62,7 +56,6 @@ var queenTable = [64]int{
 	-20, -10, -10, -5, -5, -10, -10, -20,
 }
 
-// King - Opening
 var kingOpeningTable = [64]int{
 	20, 30, 10, 0, 0, 10, 30, 20,
 	20, 20, 0, 0, 0, 0, 20, 20,
@@ -74,7 +67,6 @@ var kingOpeningTable = [64]int{
 	-30, -40, -40, -50, -50, -40, -40, -30,
 }
 
-// King - Endgame
 var kingEndgameTable = [64]int{
 	-50, -30, -30, -30, -30, -30, -30, -50,
 	-30, -30, 0, 0, 0, 0, -30, -30,
@@ -86,8 +78,7 @@ var kingEndgameTable = [64]int{
 	-50, -40, -30, -20, -20, -30, -40, -50,
 }
 
-// /////////////////////////// Piece values
-
+// Piece and event material values remain as simple maps.
 var pieceValues = map[string]int{
 	"p": 10,
 	"n": 32,
@@ -96,8 +87,6 @@ var pieceValues = map[string]int{
 	"q": 90,
 	"k": 2000,
 }
-
-// /////////////////////////// Event values
 
 var eventValues = map[string]int{
 	"checkmate": 10000,
