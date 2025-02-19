@@ -89,10 +89,11 @@ var pieceValues = map[string]int{
 }
 
 var eventValues = map[string]int{
-	"checkmate": 10000,
+	"checkmate": 1000,
 	"stalemate": 0,
 	"draw":      0,
-	"check":     100,
+	"check":     25,
 	"promotion": 50,
 	"castling":  50,
+	"fork":      50,
 }

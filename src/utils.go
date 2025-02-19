@@ -95,3 +95,81 @@ func isCastling(b *Board) bool {
 	}
 	return false
 }
+
+// If any piece (of color) is attacking 2 or more pieces, this function returns the number of pieces attacked
+// and the types of the pieces attacked. If no such piece exists, it returns 0 and a nil slice.
+// This simple implementation only checks for forks on the next move.
+func isFork(b *Board, color int) (int, []string) {
+	// Map enemy piece types to their bitboards (excluding the enemy king).
+	enemyMap := map[string]Bitboard{}
+	if color == White {
+		enemyMap["pawn"] = b.bp
+		enemyMap["knight"] = b.bn
+		enemyMap["bishop"] = b.bb
+		enemyMap["rook"] = b.br
+		enemyMap["queen"] = b.bq
+	} else {
+		enemyMap["pawn"] = b.wp
+		enemyMap["knight"] = b.wn
+		enemyMap["bishop"] = b.wb
+		enemyMap["rook"] = b.wr
+		enemyMap["queen"] = b.wq
+	}
+
+	// Create a combined enemy pieces bitboard.
+	var enemyPieces Bitboard
+	for _, bb := range enemyMap {
+		enemyPieces |= bb
+	}
+
+	// Set up a temporary board so that move generation returns moves for the given color.
+	temp := *b
+	temp.Turn = color
+	moves := generateMovesBB(&temp)
+
+	// Map from an attacker's square to a mapping of attacked destination squares and their piece types.
+	forkMap := make(map[int]map[int]string)
+	for _, m := range moves {
+		// Check if the destination square contains an enemy piece.
+		if enemyPieces&(1<<uint(m.to)) != 0 {
+			var pieceType string
+			// Identify the type of enemy piece at the destination.
+			for typ, bb := range enemyMap {
+				if bb&(1<<uint(m.to)) != 0 {
+					pieceType = typ
+					break
+				}
+			}
+			if pieceType == "" {
+				continue
+			}
+			if _, exists := forkMap[m.from]; !exists {
+				forkMap[m.from] = make(map[int]string)
+			}
+			forkMap[m.from][m.to] = pieceType
+		}
+	}
+
+	maxCount := 0
+	var forkedTypes []string
+	// Search for any attacker that attacks 2 or more enemy pieces.
+	for _, targets := range forkMap {
+		if len(targets) >= 2 && len(targets) > maxCount {
+			maxCount = len(targets)
+			// Build a slice of unique piece types attacked.
+			typesSet := make(map[string]struct{})
+			for _, typ := range targets {
+				typesSet[typ] = struct{}{}
+			}
+			forkedTypes = forkedTypes[:0] // reset the slice
+			for typ := range typesSet {
+				forkedTypes = append(forkedTypes, typ)
+			}
+		}
+	}
+
+	if maxCount >= 2 {
+		return maxCount, forkedTypes
+	}
+	return 0, nil
+}

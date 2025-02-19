@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"math/bits"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -227,9 +227,9 @@ func findBestMove(b Board, depth int) Move {
 }
 
 func main() {
-	// Command line args: "<FEN>" <depth> <dbFile>
-	if len(os.Args) != 4 {
-		fmt.Println("Usage: \"<FEN>\" <depth> <dbFile>")
+	// Command line args: "<FEN>" <depth>
+	if len(os.Args) != 3 {
+		fmt.Println("Usage: \"<FEN>\" <depth>")
 		return
 	}
 	fen := os.Args[1]
@@ -239,31 +239,26 @@ func main() {
 		return
 	}
 
-	dbFile := os.Args[3]
+	possibleDBMoves := make([]string, 0)
 
-	if dbFile != "None" {
-		file, err := os.Open(dbFile)
-		if err != nil {
-			fmt.Println("Can't open DB:", err)
-			return
+	lines := strings.Split(db, "\n")
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		if strings.HasPrefix(line, "*") {
+			continue
 		}
-		defer file.Close()
 
-		scanner := bufio.NewScanner(file)
-		var foundMove string
-		for scanner.Scan() {
-			line := scanner.Text()
+		if strings.HasPrefix(line, fen) {
 			parts := strings.Split(line, " : ")
-			if len(parts) == 2 && strings.HasPrefix(parts[0], fen) {
-				foundMove = parts[1]
-				break
-			}
+			possibleDBMoves = append(possibleDBMoves, parts[1])
 		}
+	}
 
-		if foundMove != "" {
-			fmt.Println(foundMove)
-			return
-		}
+	if len(possibleDBMoves) > 0 {
+		// If there're possible moves in the DB, choose one randomly, print it and return.
+		// This works, because if there's only one move, the randomizer will always choose it.
+		fmt.Println(possibleDBMoves[rand.Intn(len(possibleDBMoves))])
+		return
 	}
 
 	board := parseFEN(fen)

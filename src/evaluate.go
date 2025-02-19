@@ -33,7 +33,6 @@ func evaluateBoard(b *Board) int {
 		{b.wr, pieceValues["r"], rookTable},
 		{b.wq, pieceValues["q"], queenTable},
 	}
-
 	for _, piece := range whitePieces {
 		score += evaluatePiece(piece.bb, piece.value, piece.table)
 	}
@@ -51,11 +50,91 @@ func evaluateBoard(b *Board) int {
 		{b.br, pieceValues["r"], rookTable},
 		{b.bq, pieceValues["q"], queenTable},
 	}
-
 	for _, piece := range blackPieces {
 		score -= evaluatePiece(piece.bb, piece.value, piece.table)
 	}
 	score -= evaluateKing(b.bk, endgame)
+
+	// Event-based scoring.
+
+	// If the side to move is checkmated, adjust the score.
+	if isCheckmate(b) {
+		if b.Turn == White {
+			score -= eventValues["checkmate"]
+		} else {
+			score += eventValues["checkmate"]
+		}
+	} else if isStalemate(b) || isDraw(b) {
+		// For stalemate/draw, no adjustment is applied (could be modified if desired).
+	} else {
+		// Bonus for delivering a check.
+		// If Black's king is in check, White is delivering the check.
+		if b.IsKingInCheck(Black) {
+			score += eventValues["check"]
+		}
+		// If White's king is in check, Black is delivering the check.
+		if b.IsKingInCheck(White) {
+			score -= eventValues["check"]
+		}
+	}
+
+	// Bonus for castling.
+	if b.wk != 0 {
+		kingSq := bits.TrailingZeros64(uint64(b.wk))
+		// White castled kingside (g1) or queenside (c1)
+		if kingSq == 6 || kingSq == 2 {
+			score += eventValues["castling"]
+		}
+	}
+	if b.bk != 0 {
+		kingSq := bits.TrailingZeros64(uint64(b.bk))
+		// Black castled kingside (g8) or queenside (c8)
+		if kingSq == 62 || kingSq == 58 {
+			score -= eventValues["castling"]
+		}
+	}
+
+	// Bonus for forks
+	// If at least 2 is returned from isFork(), then the bonus is eventValues["fork"] + all the values of the attacked pieces
+	forkCount, attackedTypes := isFork(b, White)
+	if forkCount >= 2 {
+		bonus := eventValues["fork"]
+		for _, typ := range attackedTypes {
+			switch typ {
+			case "pawn":
+				bonus += pieceValues["p"]
+			case "knight":
+				bonus += pieceValues["n"]
+			case "bishop":
+				bonus += pieceValues["b"]
+			case "rook":
+				bonus += pieceValues["r"]
+			case "queen":
+				bonus += pieceValues["q"]
+			}
+		}
+		score += bonus
+	}
+
+	forkCount, attackedTypes = isFork(b, Black)
+	if forkCount >= 2 {
+		bonus := eventValues["fork"]
+		for _, typ := range attackedTypes {
+			switch typ {
+			case "pawn":
+				bonus += pieceValues["p"]
+			case "knight":
+				bonus += pieceValues["n"]
+			case "bishop":
+				bonus += pieceValues["b"]
+			case "rook":
+				bonus += pieceValues["r"]
+			case "queen":
+				bonus += pieceValues["q"]
+			}
+		}
+		score -= bonus
+	}
 
 	return score
 }
