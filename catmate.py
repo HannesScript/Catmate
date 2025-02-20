@@ -1,11 +1,26 @@
 import subprocess
+import chess
 
-executable = ''
+def get_board_fen(board: chess.Board) -> str:
+    fen = board.board_fen() + " " + ("w" if board.turn else "b") + " "
+    if board.has_kingside_castling_rights(chess.WHITE):
+        fen += "K"
+    if board.has_queenside_castling_rights(chess.WHITE):
+        fen += "Q"
+    if board.has_kingside_castling_rights(chess.BLACK):
+        fen += "k"
+    if board.has_queenside_castling_rights(chess.BLACK):
+        fen += "q"
+    if not (board.has_kingside_castling_rights(chess.WHITE) or board.has_queenside_castling_rights(chess.WHITE) or board.has_kingside_castling_rights(chess.BLACK) or board.has_queenside_castling_rights(chess.BLACK)):
+        fen += "-"
+    return fen
 
-def run(executable_path: str, fen_string: str, depth: int, database: str) -> str:
+
+async def run(executable_path: str, board: chess.Board, depth: int) -> str:
     try:
-        result = subprocess.run([executable_path, f"\"{fen_string}\"", depth, database])    # This process will run the executable with the given arguments, which prints out something like "e2e4" to stdout
-        return result.stdout.decode('utf-8').strip()    # This will return the output of the process
+        fen = get_board_fen(board=board)
+        result = subprocess.run([executable_path, f"\"{fen}\"", str(depth)], capture_output=True, text=True)    # This process will run the executable with the given arguments, which prints out something like "e2e4" to stdout
+        return result.stdout.strip()    # This will return the output of the process
     except Exception as e:
         print(f"Error running Catmate: {e}")
         return ""

@@ -239,24 +239,21 @@ func main() {
 		return
 	}
 
-	possibleDBMoves := make([]string, 0)
-
-	lines := strings.Split(db, "\n")
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
+	var possibleDBMoves []string
+	for _, line := range strings.Split(db, "\n") {
 		if strings.HasPrefix(line, "*") {
 			continue
 		}
-
 		if strings.HasPrefix(line, fen) {
-			parts := strings.Split(line, " : ")
-			possibleDBMoves = append(possibleDBMoves, parts[1])
+			parts := strings.SplitN(line, " : ", 2)
+			if len(parts) == 2 {
+				possibleDBMoves = append(possibleDBMoves, parts[1])
+			}
 		}
 	}
 
 	if len(possibleDBMoves) > 0 {
-		// If there're possible moves in the DB, choose one randomly, print it and return.
-		// This works, because if there's only one move, the randomizer will always choose it.
+		// Choose one randomly, print it and return.
 		fmt.Println(possibleDBMoves[rand.Intn(len(possibleDBMoves))])
 		return
 	}

@@ -19,4 +19,4 @@ Catmate is a free and fast UCI Chess Engine.
 To use Catmate with Python you first have to compile Catmate from source or download a released executable.
 
 Once you've done that, you can import from `catmate.py`, the function `run`,  in your Python program. And call
-`run(executable_path="<path_to_catmate_executable>", fen_string="<FEN_STRING>", depth=<depth>)` )
+`run(executable_path="<path_to_catmate_executable>", board=<chess.Board board>, depth=<depth>)` )
