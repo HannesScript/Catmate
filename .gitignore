@@ -3,4 +3,5 @@ __pycache__/
 *.pyc
 games_played_sf.txt
 train/
-bin/Catmate.exe
+bin/
+.vscode/
