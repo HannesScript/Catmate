@@ -6,130 +6,11 @@
 #include <random>
 #include <future>
 
+#include "constants.cpp"
+#include "database.cpp"
+
 using namespace std;
-
-// ----- Global Constants ----- //
 using Bitboard = uint64_t;
-
-const int White = 0;
-const int Black = 1;
-
-// Evaluation tables (64-element arrays)
-const array<int, 64> pawnTable = {{
-    0, 5, 5, -10, -10, 5, 5, 0,
-    0, 10, -5, 0, 0, -5, 10, 0,
-    0, 10, 10, 20, 20, 10, 10, 0,
-    0, 5, 10, 25, 25, 10, 5, 0,
-    5, 10, 20, 30, 30, 20, 10, 5,
-    10, 20, 30, 40, 40, 30, 20, 10,
-    50, 50, 50, 50, 50, 50, 50, 50,
-    0, 0, 0, 0, 0, 0, 0, 0
-}};
-
-const array<int, 64> knightTable = {{
-    -50, -40, -30, -30, -30, -30, -40, -50,
-    -40, -20, 0, 0, 0, 0, -20, -40,
-    -30, 0, 10, 15, 15, 10, 0, -30,
-    -30, 5, 15, 20, 20, 15, 5, -30,
-    -30, 0, 15, 20, 20, 15, 0, -30,
-    -30, 5, 10, 15, 15, 10, 5, -30,
-    -40, -20, 0, 5, 5, 0, -20, -40,
-    -50, -40, -30, -30, -30, -30, -40, -50
-}};
-
-const array<int, 64> bishopTable = {{
-    -20, -10, -10, -10, -10, -10, -10, -20,
-    -10, 5, 0, 0, 0, 0, 5, -10,
-    -10, 10, 10, 10, 10, 10, 10, -10,
-    -10, 0, 10, 10, 10, 10, 0, -10,
-    -10, 5, 5, 10, 10, 5, 5, -10,
-    -10, 0, 5, 10, 10, 5, 0, -10,
-    -10, 0, 0, 0, 0, 0, 0, -10,
-    -20, -10, -10, -10, -10, -10, -10, -20
-}};
-
-const array<int, 64> rookTable = {{
-    0, 0, 0, 5, 5, 0, 0, 0,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    5, 10, 10, 10, 10, 10, 10, 5,
-    0, 0, 0, 0, 0, 0, 0, 0
-}};
-
-const array<int, 64> queenTable = {{
-    -20, -10, -10, -5, -5, -10, -10, -20,
-    -10, 0, 0, 0, 0, 0, 0, -10,
-    -10, 0, 5, 5, 5, 5, 0, -10,
-    -5, 0, 5, 5, 5, 5, 0, -5,
-    0, 0, 5, 5, 5, 5, 0, -5,
-    -10, 5, 5, 5, 5, 5, 0, -10,
-    -10, 0, 5, 0, 0, 0, 0, -10,
-    -20, -10, -10, -5, -5, -10, -10, -20
-}};
-
-const array<int, 64> kingOpeningTable = {{
-    20, 30, 10, 0, 0, 10, 30, 20,
-    20, 20, 0, 0, 0, 0, 20, 20,
-    -10, -20, -20, -20, -20, -20, -20, -10,
-    -20, -30, -30, -40, -40, -30, -30, -20,
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -30, -40, -40, -50, -50, -40, -40, -30
-}};
-
-const array<int, 64> kingEndgameTable = {{
-    -50, -30, -30, -30, -30, -30, -30, -50,
-    -30, -30, 0, 0, 0, 0, -30, -30,
-    -30, -10, 20, 30, 30, 20, -10, -30,
-    -30, -10, 30, 40, 40, 30, -10, -30,
-    -30, -10, 30, 40, 40, 30, -10, -30,
-    -30, -10, 20, 30, 30, 20, -10, -30,
-    -30, -20, -20, 0, 0, -20, -20, -30,
-    -50, -40, -30, -20, -20, -30, -40, -50
-}};
-
-// Material values
-unordered_map<string, int> pieceValues = {
-    {"p", 10}, {"n", 32}, {"b", 33},
-    {"r", 50}, {"q", 90}, {"k", 2000}
-};
-
-unordered_map<string, int> eventValues = {
-    {"checkmate", 1000},
-    {"stalemate", 0},
-    {"draw",      0},
-    {"check",     25},
-    {"promotion", 50},
-    {"castling",  50},
-    {"fork",      50}
-};
-
-// ----- Board and Move Types ----- //
-struct Board {
-    // White pieces
-    Bitboard wp = 0, wn = 0, wb = 0, wr = 0, wq = 0, wk = 0;
-    // Black pieces
-    Bitboard bp = 0, bn = 0, bb = 0, br = 0, bq = 0, bk = 0;
-    int Turn = White;
-};
-
-struct Move {
-    int from;
-    int to;
-    string toString() const {
-        char fromFile = 'a' + (from % 8);
-        char toFile = 'a' + (to % 8);
-        int fromRank = (from / 8) + 1;
-        int toRank = (to / 8) + 1;
-        ostringstream oss;
-        oss << fromFile << fromRank << toFile << toRank;
-        return oss.str();
-    }
-};
 
 // ----- Utility Functions ----- //
 int popCount(Bitboard bb) {
@@ -209,8 +90,8 @@ vector<Move> generateMoves(const Board *b) {
     if(b->Turn == White) {
         Bitboard friendOcc = b->wp | b->wn | b->wb | b->wr | b->wq | b->wk;
         Bitboard enemyOcc = b->bp | b->bn | b->bb | b->br | b->bq | b->bk;
-        // ----- White Pawn Moves -----
-        // Single push and double push from rank2
+
+        // ----- White Pawn Moves (unchanged) -----
         {
             Bitboard singlePush = (b->wp << 8) & ~occ;
             while(singlePush) {
@@ -226,20 +107,18 @@ vector<Move> generateMoves(const Board *b) {
                 singlePush &= singlePush - 1;
             }
         }
-        // Pawn captures (diagonally)
+        // Pawn captures (diagonally) using delta logic (could be replaced similarly)
         {
             Bitboard pawns = b->wp;
             while(pawns) {
                 int fromSquare = trailingZeros(pawns);
                 int fromFile = fileOf(fromSquare);
                 int fromRank = rankOf(fromSquare);
-                // Capture to the left (if not on file 0)
                 if(fromFile > 0) {
                     int toSquare = fromSquare + 7;
                     if(rankOf(toSquare) == fromRank + 1 && (enemyOcc & (1ULL << toSquare)))
                         moves.push_back({fromSquare, toSquare});
                 }
-                // Capture to the right (if not on file 7)
                 if(fromFile < 7) {
                     int toSquare = fromSquare + 9;
                     if(rankOf(toSquare) == fromRank + 1 && (enemyOcc & (1ULL << toSquare)))
@@ -248,109 +127,72 @@ vector<Move> generateMoves(const Board *b) {
                 pawns &= pawns - 1;
             }
         }
-        // ----- White Knight Moves -----
+        // ----- White Knight Moves (using attack table) -----
         {
-            const int knightOffsets[8] = {17,15,10,6,-6,-10,-15,-17};
             Bitboard knights = b->wn;
             while(knights) {
                 int fromSquare = trailingZeros(knights);
-                int fromFile = fileOf(fromSquare);
-                int fromRank = rankOf(fromSquare);
-                for (int offset : knightOffsets) {
-                    int toSquare = fromSquare + offset;
-                    if(toSquare < 0 || toSquare >= 64) continue;
-                    int toFile = fileOf(toSquare);
-                    int toRank = rankOf(toSquare);
-                    // Ensure move shape is valid (L-shape)
-                    if(abs(toFile - fromFile) > 2 || abs(toRank - fromRank) > 2) continue;
-                    if(friendOcc & (1ULL << toSquare)) continue;
+                Bitboard knightMoves = knightAttacks[fromSquare] & ~friendOcc;
+                while(knightMoves) {
+                    int toSquare = trailingZeros(knightMoves);
                     moves.push_back({fromSquare, toSquare});
+                    knightMoves &= knightMoves - 1;
                 }
                 knights &= knights - 1;
             }
         }
-        // ----- White Bishop Moves -----
+        // ----- White Bishop Moves (using attack table) -----
         {
-            const int bishopDeltas[4] = {9, 7, -7, -9};
             Bitboard bishops = b->wb;
             while(bishops) {
                 int fromSquare = trailingZeros(bishops);
-                int fromFile = fileOf(fromSquare);
-                for (int delta : bishopDeltas) {
-                    int toSquare = fromSquare;
-                    while(true) {
-                        toSquare += delta;
-                        if(toSquare < 0 || toSquare >= 64) break;
-                        // Prevent wrapping: file must change by exactly 1 each step
-                        if(abs(fileOf(toSquare) - fileOf(toSquare - delta)) != 1) break;
-                        if(friendOcc & (1ULL << toSquare)) break;
-                        moves.push_back({fromSquare, toSquare});
-                        if(enemyOcc & (1ULL << toSquare)) break;
-                    }
+                Bitboard bishopMoves = bishopAttacks[fromSquare] & ~friendOcc;
+                while(bishopMoves) {
+                    int toSquare = trailingZeros(bishopMoves);
+                    moves.push_back({fromSquare, toSquare});
+                    bishopMoves &= bishopMoves - 1;
                 }
                 bishops &= bishops - 1;
             }
         }
-        // ----- White Rook Moves -----
+        // ----- White Rook Moves (using attack table) -----
         {
-            const int rookDeltas[4] = {8, -8, 1, -1};
             Bitboard rooks = b->wr;
             while(rooks) {
                 int fromSquare = trailingZeros(rooks);
-                for (int delta : rookDeltas) {
-                    int toSquare = fromSquare;
-                    while(true) {
-                        toSquare += delta;
-                        if(toSquare < 0 || toSquare >= 64) break;
-                        // For horizontal moves, ensure same rank.
-                        if((delta == 1 || delta == -1) && rankOf(toSquare) != rankOf(fromSquare))
-                            break;
-                        if(friendOcc & (1ULL << toSquare)) break;
-                        moves.push_back({fromSquare, toSquare});
-                        if(enemyOcc & (1ULL << toSquare)) break;
-                    }
+                Bitboard rookMoves = rookAttacks[fromSquare] & ~friendOcc;
+                while(rookMoves) {
+                    int toSquare = trailingZeros(rookMoves);
+                    moves.push_back({fromSquare, toSquare});
+                    rookMoves &= rookMoves - 1;
                 }
                 rooks &= rooks - 1;
             }
         }
-        // ----- White Queen Moves -----
+        // ----- White Queen Moves (using attack table) -----
         {
-            const int queenDeltas[8] = {8, -8, 1, -1, 9, 7, -7, -9};
             Bitboard queens = b->wq;
             while(queens) {
                 int fromSquare = trailingZeros(queens);
-                for (int delta : queenDeltas) {
-                    int toSquare = fromSquare;
-                    while(true) {
-                        toSquare += delta;
-                        if(toSquare < 0 || toSquare >= 64) break;
-                        if(((delta == 1 || delta == -1) && rankOf(toSquare) != rankOf(fromSquare)))
-                            break;
-                        // For diagonal moves, check wrap-around.
-                        if((delta == 9 || delta == -7 || delta == 7 || delta == -9)
-                             && abs(fileOf(toSquare) - fileOf(toSquare - delta)) != 1)
-                            break;
-                        if(friendOcc & (1ULL << toSquare)) break;
-                        moves.push_back({fromSquare, toSquare});
-                        if(enemyOcc & (1ULL << toSquare)) break;
-                    }
+                Bitboard queenMoves = queenAttacks[fromSquare] & ~friendOcc;
+                while(queenMoves) {
+                    int toSquare = trailingZeros(queenMoves);
+                    moves.push_back({fromSquare, toSquare});
+                    queenMoves &= queenMoves - 1;
                 }
                 queens &= queens - 1;
             }
         }
-        // ----- White King Moves -----
+        // ----- White King Moves (using attack table) -----
         {
-            const int kingDeltas[8] = {8, -8, 1, -1, 9, 7, -7, -9};
             Bitboard king = b->wk;
             if(king) {
                 int fromSquare = trailingZeros(king);
-                for (int delta : kingDeltas) {
-                    int toSquare = fromSquare + delta;
-                    if(toSquare < 0 || toSquare >= 64) continue;
-                    if((delta == 1 || delta == -1) && rankOf(toSquare) != rankOf(fromSquare))
-                        continue;
-                    if(friendOcc & (1ULL << toSquare)) continue;
+                Bitboard kingMoves = kingAttacks[fromSquare] & ~friendOcc;
+                while(kingMoves) {
+                    int toSquare = trailingZeros(kingMoves);
                     moves.push_back({fromSquare, toSquare});
+                    kingMoves &= kingMoves - 1;
                 }
             }
         }
@@ -358,14 +200,14 @@ vector<Move> generateMoves(const Board *b) {
         // ----- Black Moves -----
         Bitboard friendOcc = b->bp | b->bn | b->bb | b->br | b->bq | b->bk;
         Bitboard enemyOcc = b->wp | b->wn | b->wb | b->wr | b->wq | b->wk;
-        // ----- Black Pawn Moves -----
+        // ----- Black Pawn Moves (unchanged) -----
         {
             Bitboard singlePush = (b->bp >> 8) & ~occ;
             while(singlePush) {
                 int toSquare = trailingZeros(singlePush);
                 int fromSquare = toSquare + 8;
                 moves.push_back({fromSquare, toSquare});
-                // Double push from starting rank (rank 7, index 6)
+                // Pawn double push from starting rank (rank 7, index 6)
                 if(rankOf(fromSquare) == 6) {
                     int toSquare2 = toSquare - 8;
                     if(~occ & (1ULL << toSquare2))
@@ -381,7 +223,6 @@ vector<Move> generateMoves(const Board *b) {
                 int fromSquare = trailingZeros(pawns);
                 int fromFile = fileOf(fromSquare);
                 int fromRank = rankOf(fromSquare);
-                // For black, captures are diagonally downward.
                 if(fromFile > 0) {
                     int toSquare = fromSquare - 9;
                     if(rankOf(toSquare) == fromRank - 1 && (enemyOcc & (1ULL << toSquare)))
@@ -395,101 +236,72 @@ vector<Move> generateMoves(const Board *b) {
                 pawns &= pawns - 1;
             }
         }
-        // ----- Black Knight Moves -----
+        // ----- Black Knight Moves (using attack table) -----
         {
-            const int knightOffsets[8] = {17,15,10,6,-6,-10,-15,-17};
             Bitboard knights = b->bn;
             while(knights) {
                 int fromSquare = trailingZeros(knights);
-                int fromFile = fileOf(fromSquare);
-                int fromRank = rankOf(fromSquare);
-                for (int offset : knightOffsets) {
-                    int toSquare = fromSquare + offset;
-                    if(toSquare < 0 || toSquare >= 64) continue;
-                    int toFile = fileOf(toSquare);
-                    int toRank = rankOf(toSquare);
-                    if(abs(toFile - fromFile) > 2 || abs(toRank - fromRank) > 2) continue;
-                    if(friendOcc & (1ULL << toSquare)) continue;
+                Bitboard knightMoves = knightAttacks[fromSquare] & ~friendOcc;
+                while(knightMoves) {
+                    int toSquare = trailingZeros(knightMoves);
                     moves.push_back({fromSquare, toSquare});
+                    knightMoves &= knightMoves - 1;
                 }
                 knights &= knights - 1;
             }
         }
-        // ----- Black Bishop Moves -----
+        // ----- Black Bishop Moves (using attack table) -----
         {
-            const int bishopDeltas[4] = {9, 7, -7, -9};
             Bitboard bishops = b->bb;
             while(bishops) {
                 int fromSquare = trailingZeros(bishops);
-                for (int delta : bishopDeltas) {
-                    int toSquare = fromSquare;
-                    while(true) {
-                        toSquare += delta;
-                        if(toSquare < 0 || toSquare >= 64) break;
-                        if(abs(fileOf(toSquare) - fileOf(toSquare - delta)) != 1) break;
-                        if(friendOcc & (1ULL << toSquare)) break;
-                        moves.push_back({fromSquare, toSquare});
-                        if(enemyOcc & (1ULL << toSquare)) break;
-                    }
+                Bitboard bishopMoves = bishopAttacks[fromSquare] & ~friendOcc;
+                while(bishopMoves) {
+                    int toSquare = trailingZeros(bishopMoves);
+                    moves.push_back({fromSquare, toSquare});
+                    bishopMoves &= bishopMoves - 1;
                 }
                 bishops &= bishops - 1;
             }
         }
-        // ----- Black Rook Moves -----
+        // ----- Black Rook Moves (using attack table) -----
         {
-            const int rookDeltas[4] = {8, -8, 1, -1};
             Bitboard rooks = b->br;
             while(rooks) {
                 int fromSquare = trailingZeros(rooks);
-                for (int delta : rookDeltas) {
-                    int toSquare = fromSquare;
-                    while(true) {
-                        toSquare += delta;
-                        if(toSquare < 0 || toSquare >= 64) break;
-                        if((delta == 1 || delta == -1) && rankOf(toSquare) != rankOf(fromSquare))
-                            break;
-                        if(friendOcc & (1ULL << toSquare)) break;
-                        moves.push_back({fromSquare, toSquare});
-                        if(enemyOcc & (1ULL << toSquare)) break;
-                    }
+                Bitboard rookMoves = rookAttacks[fromSquare] & ~friendOcc;
+                while(rookMoves) {
+                    int toSquare = trailingZeros(rookMoves);
+                    moves.push_back({fromSquare, toSquare});
+                    rookMoves &= rookMoves - 1;
                 }
                 rooks &= rooks - 1;
             }
         }
-        // ----- Black Queen Moves -----
+        // ----- Black Queen Moves (using attack table) -----
         {
-            const int queenDeltas[8] = {8, -8, 1, -1, 9, 7, -7, -9};
             Bitboard queens = b->bq;
             while(queens) {
                 int fromSquare = trailingZeros(queens);
-                for (int delta : queenDeltas) {
-                    int toSquare = fromSquare;
-                    while(true) {
-                        toSquare += delta;
-                        if(toSquare < 0 || toSquare >= 64) break;
-                        if((delta == 1 || delta == -1) && rankOf(toSquare) != rankOf(fromSquare))
-                            break;
-                        if(friendOcc & (1ULL << toSquare)) break;
-                        moves.push_back({fromSquare, toSquare});
-                        if(enemyOcc & (1ULL << toSquare)) break;
-                    }
+                Bitboard queenMoves = queenAttacks[fromSquare] & ~friendOcc;
+                while(queenMoves) {
+                    int toSquare = trailingZeros(queenMoves);
+                    moves.push_back({fromSquare, toSquare});
+                    queenMoves &= queenMoves - 1;
                 }
                 queens &= queens - 1;
             }
         }
-        // ----- Black King Moves -----
+        // ----- Black King Moves (using attack table) -----
         {
-            const int kingDeltas[8] = {8, -8, 1, -1, 9, 7, -7, -9};
             Bitboard king = b->bk;
             if(king) {
                 int fromSquare = trailingZeros(king);
-                for (int delta : kingDeltas) {
-                    int toSquare = fromSquare + delta;
-                    if(toSquare < 0 || toSquare >= 64) continue;
-                    if((delta == 1 || delta == -1) && rankOf(toSquare) != rankOf(fromSquare))
-                        continue;
-                    if(friendOcc & (1ULL << toSquare)) continue;
+                Bitboard kingMoves = kingAttacks[fromSquare] & ~friendOcc;
+                while(kingMoves) {
+                    int toSquare = trailingZeros(kingMoves);
                     moves.push_back({fromSquare, toSquare});
+                    kingMoves &= kingMoves - 1;
                 }
             }
         }
@@ -698,74 +510,6 @@ Move findBestMove(Board b, int depth) {
     }
     return bestMove;
 }
-
-// ----- Database String ----- //
-const string db = R"(
-* //////////////////////////////////////////
-* White openings
-* //////////////////////////////////////////
-
-* Queen's Gambit
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : d2d4
-rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq : d7d5
-rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq : c2c4
-
-* King's Gambit
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : e7e5
-rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : f2f4
-
-* Italian Game
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : e7e5
-rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : g1f3
-rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq : b8c6
-r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq : f1c4
-
-* Ruy Lopez (aka. Spanish Opening)
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : e7e5
-rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : g1f3
-rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq : b8c6
-r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq : f1b5
-
-* //////////////////////////////////////////
-* Black openings
-* //////////////////////////////////////////
-
-* Caro-Kann Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : c7c6
-rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : d2d4
-rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq : d7d5
-
-* Scandinavian Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : d7d5
-rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : e4d5
-
-* French Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : e7e6
-
-* Sicilian Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : c7c5
-
-* Nimzo-Indian Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : d2d4
-rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq : g8f6
-rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq : c2c4
-rnbqkb1r/pppppppp/5n2/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq : e7e6
-rnbqkb1r/pppp1ppp/4pn2/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq : b1c3
-rnbqkb1r/pppp1ppp/4pn2/8/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq : f8b4
-
-* King's Indian Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : d2d4
-rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq : g8f6
-rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq : c2c4
-rnbqkb1r/pppppppp/5n2/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq : g7g6
-)";
 
 // ----- Main ----- //
 int main(int argc, char *argv[]) {
