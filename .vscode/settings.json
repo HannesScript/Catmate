@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.embeddedhtml": "html",
+        "*.gob": "go",
+        "cstdint": "cpp",
+        "cstdlib": "cpp"
+    }
+}
