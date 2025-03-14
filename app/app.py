@@ -15,7 +15,7 @@ DARK_BROWN = (170, 126, 89)
 SELECT_COLOR = (0, 255, 0)
 
 # Tiefe der Suche
-DEPTH = 8
+DEPTH = 6
 
 def load_piece_images():
     """Lädt und gibt ein Dictionary mit den Figurenbildern zurück."""

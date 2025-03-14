@@ -20,10 +20,10 @@ async def run(executable_path: str, board: chess.Board, depth: int) -> str:
     try:
         fen = get_board_fen(board=board)
         command = f"{executable_path} \"{fen}\" {depth}"
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        output, error = process.communicate()
-        print(f"Catmate output: {output.decode('utf-8').strip()}")
-        return output.decode("utf-8").strip()
+        result = subprocess.run(command, capture_output=True, text=True)
+        output = result.stdout
+        print(f"Catmate output: {output.strip()}")
+        return output.strip()
     except Exception as e:
         print(f"Error running Catmate: {e}")
         return ""
