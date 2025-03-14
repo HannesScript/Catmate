@@ -42,6 +42,33 @@ rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : c7c6
 rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : d2d4
 rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq : d7d5
+* exchange variation
+rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq : e4d5
+rnbqkbnr/pp2pppp/2p5/3P4/3P4/8/PPP2PPP/RNBQKBNR b KQkq : c6d5
+rnbqkbnr/pp2pppp/8/3p4/3P4/8/PPP2PPP/RNBQKBNR w KQkq : f1b5
+rnbqkbnr/pp2pppp/8/1B1p4/3P4/8/PPP2PPP/RNBQK1NR b KQkq : b8c6
+r1bqkbnr/pp2pppp/2n5/1B1p4/3P4/8/PPP2PPP/RNBQK1NR w KQkq : b5c6
+r1bqkbnr/pp2pppp/2B5/3p4/3P4/8/PPP2PPP/RNBQK1NR b KQkq : b7c6
+r1bqkbnr/p3pppp/2p5/3p4/3P4/8/PPP2PPP/RNBQK1NR w KQkq : g1f3
+r1bqkbnr/p3pppp/2p5/3p4/3P4/5N2/PPP2PPP/RNBQK2R b KQkq : e7e6
+r1bqkbnr/p4ppp/2p1p3/3p4/3P4/5N2/PPP2PPP/RNBQK2R w KQkq : e1g1
+r1bqkbnr/p4ppp/2p1p3/3p4/3P4/5N2/PPP2PPP/RNBQ1RK1 b kq : f8d6
+r1bqk1nr/p4ppp/2pbp3/3p4/3P4/5N2/PPP2PPP/RNBQ1RK1 w kq : h2h4
+r1bqk1nr/p4ppp/2pbp3/3p4/3P3P/5N2/PPP2PP1/RNBQ1RK1 b kq : g8f6
+r1bqk2r/p4ppp/2pbpn2/3p4/3P3P/5N2/PPP2PP1/RNBQ1RK1 w kq : f1e1
+r1bqk2r/p4ppp/2pbpn2/3p4/3P3P/5N2/PPP2PP1/RNBQR1K1 b kq : e8f8
+r1bq1rk1/p4ppp/2pbpn2/3p4/3P3P/5N2/PPP2PP1/RNBQR1K1 w - : b2b3
+* Knight push by white
+rnbqkbnr/pp1ppppp/2p5/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq : d7d5
+* exchange variation
+rnbqkbnr/pp2pppp/2p5/3p4/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq : e4d5
+rnbqkbnr/pp2pppp/2p5/3P4/8/5N2/PPPP1PPP/RNBQKB1R b KQkq : c6d5
+rnbqkbnr/pp2pppp/8/3p4/8/5N2/PPPP1PPP/RNBQKB1R w KQkq : f1b5
+rnbqkbnr/pp2pppp/8/1B1p4/8/5N2/PPPP1PPP/RNBQK2R b KQkq : b8c6
+r1bqkbnr/pp2pppp/2n5/1B1p4/8/5N2/PPPP1PPP/RNBQK2R w KQkq : b5c6
+r1bqkbnr/pp2pppp/2B5/3p4/8/5N2/PPPP1PPP/RNBQK2R b KQkq : b7c6
+r1bqkbnr/p3pppp/2p5/3p4/8/5N2/PPPP1PPP/RNBQK2R w KQkq : e1g1
+r1bqkbnr/p3pppp/2p5/3p4/8/5N2/PPPP1PPP/RNBQ1RK1 b kq : e7e6
 
 * Scandinavian Defense
 rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4

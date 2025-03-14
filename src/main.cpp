@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 {
     if (argc < 3 || argc > 7)
     {
-        cout << "Usage: \"<FEN>\" <max_depth> [-tt PATH_TO_TT.tt] [-time TIME_LIMIT_MS]" << endl;
+        cout << "Usage: \"<FEN>\" <max_depth> [-tt PATH_TO_TT]" << endl;
         return 1;
     }
     string fen = argv[1];
@@ -202,10 +202,6 @@ int main(int argc, char *argv[])
         {
             ttPath = argv[++i];
             transpositionTable = loadTranspositionTable(ttPath);
-        }
-        else if (arg == "-time" && i + 1 < argc)
-        {
-            maxTime = stoi(argv[++i]);
         }
         else
         {
