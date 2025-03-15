@@ -1,4 +1,4 @@
-import subprocess
+import asyncio
 import chess
 
 def get_board_fen(board: chess.Board) -> str:
@@ -20,7 +20,14 @@ async def run(executable_path: str, board: chess.Board, depth: int) -> str:
     try:
         fen = get_board_fen(board=board)
         command = f"{executable_path} \"{fen}\" {depth}"
-        result = subprocess.run(command, capture_output=True, text=True)
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        result = await asyncio.create_subprocess_exec(
+            command,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
         output = result.stdout
         print(f"Catmate output: {output.strip()}")
         return output.strip()

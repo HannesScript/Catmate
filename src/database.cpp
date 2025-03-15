@@ -59,6 +59,7 @@ r1bqk2r/p4ppp/2pbpn2/3p4/3P3P/5N2/PPP2PP1/RNBQ1RK1 w kq : f1e1
 r1bqk2r/p4ppp/2pbpn2/3p4/3P3P/5N2/PPP2PP1/RNBQR1K1 b kq : e8f8
 r1bq1rk1/p4ppp/2pbpn2/3p4/3P3P/5N2/PPP2PP1/RNBQR1K1 w - : b2b3
 * Knight push by white
+rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : g1f3
 rnbqkbnr/pp1ppppp/2p5/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq : d7d5
 * exchange variation
 rnbqkbnr/pp2pppp/2p5/3p4/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq : e4d5

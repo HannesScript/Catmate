@@ -20,7 +20,7 @@
 #include "database.cpp"
 
 // Define PROFILE to enable instrumentation.
-//#define PROFILE
+// #define PROFILE
 
 using namespace std;
 using Bitboard = uint64_t;
@@ -134,18 +134,18 @@ Move findBestMove(Board b, int fixedDepth)
 {
     Move bestMove{0, 0};
     int bestScore = -1000000;
-    searchStart = Clock::now();
 
     vector<Move> moves = generateMoves(&b);
     vector<pair<int, Move>> scoredMoves;
     for (const auto &m : moves)
         scoredMoves.push_back({scoreMove(m, fixedDepth), m});
-    sort(scoredMoves.begin(), scoredMoves.end(), [](auto &a, auto &b) { return a.first > b.first; });
+    sort(scoredMoves.begin(), scoredMoves.end(), [](auto &a, auto &b)
+         { return a.first > b.first; });
 
     unsigned int maxConcurrent = thread::hardware_concurrency();
     if (maxConcurrent == 0)
         maxConcurrent = 2; // default if hardware_concurrency() is not available
-
+        
     // Process moves in parallel batches.
     for (size_t i = 0; i < scoredMoves.size(); i += maxConcurrent)
     {
@@ -154,9 +154,8 @@ Move findBestMove(Board b, int fixedDepth)
         for (size_t j = i; j < scoredMoves.size() && j < i + maxConcurrent; j++)
         {
             Board newB = applyMove(b, scoredMoves[j].second);
-            futures.push_back(async(launch::async, [newB, fixedDepth]() -> int {
-                return minimax(newB, fixedDepth, -1000000, 1000000, false);
-            }));
+            futures.push_back(async(launch::async, [newB, fixedDepth]() -> int
+                                    { return minimax(newB, fixedDepth, -1000000, 1000000, false); }));
             moveBatch.push_back(scoredMoves[j].second);
         }
         for (size_t k = 0; k < futures.size(); k++)
