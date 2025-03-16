@@ -7,19 +7,23 @@
 
 typedef uint64_t Bitboard;
 
-enum Color { White, Black };
+enum Color
+{ White, Black };
 
-struct Board {
+struct Board
+{
     Bitboard wp, wn, wb, wr, wq, wk;
     Bitboard bp, bn, bb, br, bq, bk;
     Color Turn;
 };
 
-inline Board applyMove(Board b, const Move &move) {
+inline Board applyMove(Board b, const Move &move)
+{
     Bitboard fromMask = 1ULL << move.from;
     Bitboard toMask   = 1ULL << move.to;
 
-    if(b.Turn == White) {
+    if(b.Turn == White)
+    {
         // Remove any captured black piece.
         std::array<Bitboard*, 6> blackPieces = { &b.bp, &b.bn, &b.bb, &b.br, &b.bq, &b.bk };
         for(auto piece : blackPieces)
@@ -33,7 +37,8 @@ inline Board applyMove(Board b, const Move &move) {
         else if(b.wq & fromMask)  b.wq = (b.wq & ~fromMask) | toMask;
         else if(b.wk & fromMask)  b.wk = (b.wk & ~fromMask) | toMask;
     }
-    else {
+    else
+    {
         // Remove any captured white piece.
         std::array<Bitboard*, 6> whitePieces = { &b.wp, &b.wn, &b.wb, &b.wr, &b.wq, &b.wk };
         for(auto piece : whitePieces)
