@@ -38,7 +38,7 @@ string ttPath;
 
 // Global timing variables.
 Clock::time_point searchStart;
-int maxTime = 5000; // default time limit in milliseconds
+int maxTime = 10'000; // default time limit in milliseconds
 
 // Global killer moves and history heuristic tables.
 vector<array<Move, 2>> killerMoves(MAX_DEPTH);

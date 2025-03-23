@@ -13,7 +13,7 @@ uint64_t zobristTurn;
 // Initialize the Zobrist table with random 64-bit values.
 void initZobrist()
 {
-    std::mt19937_64 rng(123456789); // fixed seed for reproducibility or use random_device for randomness
+    std::mt19937_64 rng(915378694376); // fixed seed for reproducibility or use random_device for randomness
     std::uniform_int_distribution<uint64_t> dist;
     for (int p = 0; p < NUM_PIECES; p++)
     {
