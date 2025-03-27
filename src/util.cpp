@@ -68,6 +68,61 @@ Board parseFEN(const std::string &fen) {
     return board;
 }
 
+std::string toFENString(const Board &b) {
+    std::string fen;
+    for (int rank = 7; rank >= 0; rank--) {
+        int empty = 0;
+        for (int file = 0; file < 8; file++) {
+            int square = rank * 8 + file;
+            uint64_t mask = 1ULL << square;
+            char piece = '\0';
+            if (b.wp & mask)
+                piece = 'P';
+            else if (b.wn & mask)
+                piece = 'N';
+            else if (b.wb & mask)
+                piece = 'B';
+            else if (b.wr & mask)
+                piece = 'R';
+            else if (b.wq & mask)
+                piece = 'Q';
+            else if (b.wk & mask)
+                piece = 'K';
+            else if (b.bp & mask)
+                piece = 'p';
+            else if (b.bn & mask)
+                piece = 'n';
+            else if (b.bb & mask)
+                piece = 'b';
+            else if (b.br & mask)
+                piece = 'r';
+            else if (b.bq & mask)
+                piece = 'q';
+            else if (b.bk & mask)
+                piece = 'k';
+
+            if (piece == '\0') {
+                empty++;
+            } else {
+                if (empty > 0) {
+                    fen += std::to_string(empty);
+                    empty = 0;
+                }
+                fen.push_back(piece);
+            }
+        }
+        if (empty > 0)
+            fen += std::to_string(empty);
+        if (rank > 0)
+            fen.push_back('/');
+    }
+
+    // Append turn.
+    fen.push_back(' ');
+    fen.push_back((b.Turn == White) ? 'w' : 'b');
+    return fen;
+}
+
 // ----- TT Storing and Loading ----- //
 void storeTranspositionTable(std::unordered_map<uint64_t, TTEntry> &tt, const std::string &path) {
     std::ofstream file(path);

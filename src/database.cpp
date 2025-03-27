@@ -1,5 +1,4 @@
-#ifndef DATABASE
-#define DATABASE
+#pragma once
 
 #include <string>
 using namespace std;
@@ -98,5 +97,3 @@ rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq : g8f6
 rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq : c2c4
 rnbqkb1r/pppppppp/5n2/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq : g7g6
 )";
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef CONSTANTS
-#define CONSTANTS
+#pragma once
 
 #include <array>
 #include <string>
@@ -100,17 +99,17 @@ const std::array<int, 64> kingEndgameTable = {{
 // ----- Values ----- //
 
 std::unordered_map<std::string, int> pieceValues = {
-    {"p", 10}, {"n", 32}, {"b", 33}, {"r", 50}, {"q", 90}, {"k", 0}};
+    {"p", 10}, {"n", 30}, {"b", 32}, {"r", 50}, {"q", 90}, {"k", 0}};
 
 std::unordered_map<std::string, int> eventValues = {
-    {"checkmate", 2000},
+    {"checkmate", 20000},
     {"stalemate", 0},
     {"draw", 0},
-    {"check", 50},
-    {"promotion", 100},
-    {"castling", 50},
-    {"fork", 60},
-    {"capture", 10}};
+    {"check", 500},
+    {"promotion", 1000},
+    {"castling", 500},
+    {"fork", 600},
+    {"capture", 100}};
 
 // ----- Move Types ----- //
 
@@ -128,11 +127,22 @@ struct Move {
         s[5] = '\0';
         return std::string(s);
     }
+
+    inline Move fromString(std::string uciMove) const {
+        Move move;
+
+        auto squareFrom = [](char file, char rank) -> int {
+            return (rank - '1') * 8 + (file - 'a');
+        };
+        move.from = squareFrom(uciMove[0], uciMove[1]);
+        move.to = squareFrom(uciMove[2], uciMove[3]);
+        move.promo = (uciMove.size() == 5) ? uciMove[4] : '\0';
+
+        return move;
+    }
 };
 
 inline bool operator==(const Move &a, const Move &b)
 {
     return a.from == b.from && a.to == b.to && a.promo == b.promo;
 }
-
-#endif

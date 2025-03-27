@@ -1,5 +1,4 @@
-#ifndef MOVE_GEN
-#define MOVE_GEN
+#pragma once
 
 #include <vector>
 #include <cstdint>
@@ -54,7 +53,7 @@ void generateSlidingMoves(const Board* b, Bitboard pieces, const int* offsets, i
     }
 }
 
-vector<Move> generateMoves(const Board *b) {
+vector<Move> generatePseudoLegalMoves(const Board *b) {
     vector<Move> moves;
     Bitboard occ = occupied(*b);
 
@@ -263,35 +262,31 @@ vector<Move> generateMoves(const Board *b) {
             }
         }
     }
-
-    // Remove moves that leave the king in check.
-    vector<Move> legalMoves;
-    for (auto &m : moves) {
-        Board board = *b;
-        Board temp = applyMove(board, m);
-        // Flip turn so that generateMoves checks opponent moves.
-        temp.Turn = (temp.Turn == White ? Black : White);
-        // if (!kingIsInCheck(&temp, b->Turn)) // If not commented out, generateMoves() returns nothing
-            legalMoves.push_back(m);
-    }
-    return legalMoves;
+    return moves;
 }
 
 bool kingIsInCheck(const Board *b, int side) {
     Board board = *b;
-    
-    vector<Move> possibleMovesByOpponent = generateMoves(&board);
-
-    for (Move &m : possibleMovesByOpponent)
-    {
-        Board temp = applyMove(board, m);
-        if (side == White && temp.wk == 0) 
-            return true;
-        else if (side == Black && temp.bk == 0)
+    board.Turn = (side == White ? Black : White);
+    vector<Move> possibleMovesByOpponent = generatePseudoLegalMoves(&board);
+    for (Move &m : possibleMovesByOpponent) {
+        Board temp = applyMove(&board, m);
+        if ((side == White && temp.wk == 0ULL) ||
+            (side == Black && temp.bk == 0ULL))
             return true;
     }
-
     return false;
 }
 
-#endif
+vector<Move> generateMoves(const Board *b) {
+    vector<Move> pseudoMoves = generatePseudoLegalMoves(b);
+    vector<Move> legalMoves;
+    for (auto &m : pseudoMoves) {
+        Board board = *b;
+        Board temp = applyMove(&board, m);
+
+        if (!kingIsInCheck(&temp, b->Turn))
+            legalMoves.push_back(m);
+    }
+    return legalMoves;
+}

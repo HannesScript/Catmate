@@ -1,7 +1,5 @@
-#ifndef TRANSPOSITION
-#define TRANSPOSITION
-
 #pragma once
+
 #include <cstdint>
 #include <unordered_map>
 #include <string>
@@ -23,5 +21,3 @@ struct TTEntry
 };
 
 std::unordered_map<uint64_t, TTEntry> transpositionTable;
-
-#endif

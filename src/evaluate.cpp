@@ -1,5 +1,4 @@
-#ifndef EVALUATE
-#define EVALUATE
+#pragma once
 
 #include "util.cpp"
 #include "constants.cpp"
@@ -138,7 +137,5 @@ int evaluateBoard(const Board *b)
     // Subtract bonus for passed black pawns.
     score -= evaluatePassedPawns(b->bp, b->wp, false);
 
-    return score;
+    return (b->Turn == White) ? score : -score;
 }
-
-#endif

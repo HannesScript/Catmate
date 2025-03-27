@@ -8,7 +8,8 @@
 enum Color
 {
     White,
-    Black
+    Black,
+    Both
 };
 
 // Board structure describing all bitboards and the side to move.
@@ -20,10 +21,12 @@ struct Board
 };
 
 // Applies a move on the board and returns the new board state.
-inline Board applyMove(Board &b, const Move &move)
+inline Board applyMove(Board *board, const Move &move)
 {
     uint64_t fromMask = 1ULL << move.from;
     uint64_t toMask = 1ULL << move.to;
+
+    Board b = *board; // Create duplicate
 
     // Remove captured pieces.
     if (b.Turn == White)

@@ -1,5 +1,4 @@
-#ifndef ZOBRIST
-#define ZOBRIST
+#pragma once
 
 #include <cstdint>
 #include <random>
@@ -60,5 +59,3 @@ uint64_t computeZobrist(const Board &b)
         h ^= zobristTurn;
     return h;
 }
-
-#endif
