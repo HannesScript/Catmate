@@ -1,99 +1,16 @@
 #pragma once
 
+#include <vector>
 #include <string>
+#include <cstdint>
+
 using namespace std;
 
-const string db = R"(
-* //////////////////////////////////////////
-* White openings
-* //////////////////////////////////////////
+#include <unordered_map>
+#include <vector>
+#include <string>
+#include <cstdint>
 
-* Queen's Gambit
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : d2d4
-rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq : d7d5
-rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq : c2c4
+using namespace std;
 
-* King's Gambit
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : e7e5
-rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : f2f4
-
-* Italian Game
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : e7e5
-rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : g1f3
-rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq : b8c6
-r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq : f1c4
-
-* Ruy Lopez (aka. Spanish Opening)
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : e7e5
-rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : g1f3
-rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq : b8c6
-r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq : f1b5
-
-* //////////////////////////////////////////
-* Black openings
-* //////////////////////////////////////////
-
-* Caro-Kann Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : c7c6
-rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : d2d4
-rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq : d7d5
-* exchange variation
-rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq : e4d5
-rnbqkbnr/pp2pppp/2p5/3P4/3P4/8/PPP2PPP/RNBQKBNR b KQkq : c6d5
-rnbqkbnr/pp2pppp/8/3p4/3P4/8/PPP2PPP/RNBQKBNR w KQkq : f1b5
-rnbqkbnr/pp2pppp/8/1B1p4/3P4/8/PPP2PPP/RNBQK1NR b KQkq : b8c6
-r1bqkbnr/pp2pppp/2n5/1B1p4/3P4/8/PPP2PPP/RNBQK1NR w KQkq : b5c6
-r1bqkbnr/pp2pppp/2B5/3p4/3P4/8/PPP2PPP/RNBQK1NR b KQkq : b7c6
-r1bqkbnr/p3pppp/2p5/3p4/3P4/8/PPP2PPP/RNBQK1NR w KQkq : g1f3
-r1bqkbnr/p3pppp/2p5/3p4/3P4/5N2/PPP2PPP/RNBQK2R b KQkq : e7e6
-r1bqkbnr/p4ppp/2p1p3/3p4/3P4/5N2/PPP2PPP/RNBQK2R w KQkq : e1g1
-r1bqkbnr/p4ppp/2p1p3/3p4/3P4/5N2/PPP2PPP/RNBQ1RK1 b kq : f8d6
-r1bqk1nr/p4ppp/2pbp3/3p4/3P4/5N2/PPP2PPP/RNBQ1RK1 w kq : h2h4
-r1bqk1nr/p4ppp/2pbp3/3p4/3P3P/5N2/PPP2PP1/RNBQ1RK1 b kq : g8f6
-r1bqk2r/p4ppp/2pbpn2/3p4/3P3P/5N2/PPP2PP1/RNBQ1RK1 w kq : f1e1
-r1bqk2r/p4ppp/2pbpn2/3p4/3P3P/5N2/PPP2PP1/RNBQR1K1 b kq : e8f8
-r1bq1rk1/p4ppp/2pbpn2/3p4/3P3P/5N2/PPP2PP1/RNBQR1K1 w - : b2b3
-* Knight push by white
-rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : g1f3
-rnbqkbnr/pp1ppppp/2p5/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq : d7d5
-* exchange variation
-rnbqkbnr/pp2pppp/2p5/3p4/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq : e4d5
-rnbqkbnr/pp2pppp/2p5/3P4/8/5N2/PPPP1PPP/RNBQKB1R b KQkq : c6d5
-rnbqkbnr/pp2pppp/8/3p4/8/5N2/PPPP1PPP/RNBQKB1R w KQkq : f1b5
-rnbqkbnr/pp2pppp/8/1B1p4/8/5N2/PPPP1PPP/RNBQK2R b KQkq : b8c6
-r1bqkbnr/pp2pppp/2n5/1B1p4/8/5N2/PPPP1PPP/RNBQK2R w KQkq : b5c6
-r1bqkbnr/pp2pppp/2B5/3p4/8/5N2/PPPP1PPP/RNBQK2R b KQkq : b7c6
-r1bqkbnr/p3pppp/2p5/3p4/8/5N2/PPPP1PPP/RNBQK2R w KQkq : e1g1
-r1bqkbnr/p3pppp/2p5/3p4/8/5N2/PPPP1PPP/RNBQ1RK1 b kq : e7e6
-
-* Scandinavian Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : d7d5
-rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq : e4d5
-
-* French Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : e7e6
-
-* Sicilian Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : e2e4
-rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq : c7c5
-
-* Nimzo-Indian Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : d2d4
-rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq : g8f6
-rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq : c2c4
-rnbqkb1r/pppppppp/5n2/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq : e7e6
-rnbqkb1r/pppp1ppp/4pn2/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq : b1c3
-rnbqkb1r/pppp1ppp/4pn2/8/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq : f8b4
-
-* King's Indian Defense
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq : d2d4
-rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq : g8f6
-rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq : c2c4
-rnbqkb1r/pppppppp/5n2/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq : g7g6
-)";
+const unordered_map<uint64_t, vector<string>> db = {{3899691870434340789ULL, {"f8b4"}}, {3197687787970260661ULL, {"b1c3"}}, {10215274130490305068ULL, {"c2c4"}}, {843005527028656368ULL, {"e4d5"}}, {5468379973136152199ULL, {"e7e6"}}, {14438422444504461924ULL, {"b5c6"}}, {9844748928595161057ULL, {"c6d5"}}, {5115608046026472095ULL, {"e4d5"}}, {10755255494658251981ULL, {"e4d5"}}, {2933896641343566839ULL, {"f1c4", "f1b5"}}, {15976487283227093747ULL, {"f2f4", "g1f3"}}, {3754830055697635117ULL, {"d2d4", "e2e4"}}, {5303014292884495954ULL, {"e7e5", "c7c6", "d7d5", "e7e6", "c7c5"}}, {11518274561973660325ULL, {"f8d6"}}, {7299960627176488078ULL, {"c2c4"}}, {14741564466980387364ULL, {"g8f6"}}, {2838474939105397292ULL, {"d7d5", "g8f6"}}, {2009600759923135542ULL, {"b5c6"}}, {1503503732652017799ULL, {"b7c6"}}, {3323835387652798049ULL, {"b8c6"}}, {6567250413605063091ULL, {"c6d5"}}, {2122427846927749536ULL, {"b8c6"}}, {3744787626654257958ULL, {"g1f3"}}, {17526790295646906485ULL, {"e7e6"}}, {3782603832133740886ULL, {"e1g1"}}, {1705518335701668156ULL, {"d2d4", "g1f3"}}, {16203798782951697368ULL, {"h2h4"}}, {7364289871030491684ULL, {"f1e1"}}, {16160099671457707380ULL, {"e1g1"}}, {348087799393635389ULL, {"d7d5"}}, {16530587182428134760ULL, {"e8f8"}}, {14366932669358894805ULL, {"b7c6"}}, {4651222479701987072ULL, {"f1b5"}}, {16944038047534722966ULL, {"e7e6", "g7g6"}}, {14051159364425486691ULL, {"b2b3"}}, {10606095572485482834ULL, {"f1b5"}}, {15521855724667054703ULL, {"d7d5"}}, {18274691556932784179ULL, {"b8c6"}}};

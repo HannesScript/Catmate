@@ -39,26 +39,13 @@ private:
 
     void findMove()
     {
-        std::string fen = toFENString(board); // generate current FEN
-
-        vector<string> possibleDBMoves;
-        istringstream dbStream(db);
-        string line;
-        while (getline(dbStream, line))
-        {
-            if (line.empty() || line[0] == '*')
-                continue;
-            if (line.find(fen) == 0)
-            {
-                size_t pos = line.find(" : ");
-                if (pos != string::npos && pos + 3 < line.size())
-                    possibleDBMoves.push_back(line.substr(pos + 3));
-            }
-        }
-
+        // Compute the board's Zobrist hash
+        uint64_t boardHash = computeZobrist(board);
+        auto it = db.find(boardHash);
         Move bestMove;
-        if (!possibleDBMoves.empty())
+        if (it != db.end())
         {
+            const vector<string>& possibleDBMoves = it->second;
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_int_distribution<> dis(0, possibleDBMoves.size() - 1);
@@ -130,25 +117,6 @@ public:
             }
             else if (playingAs == Both)
             {
-                /*
-This behavior suggests that the move-generation logic is always selecting the best move for white—even when the turn should alternate—because the board’s turn isn’t being updated as expected when findBestMove is invoked.
-
-A couple of areas to check:
-
-findBestMove Implementation:
-Make sure that the function is using the board’s current turn (board.Turn) to generate moves. If it’s hardcoded or biased toward white’s moves, it will always return a white move, regardless of the actual turn.
-
-Turn Update Flow:
-In your loop you manually toggle the turn after applying the move:
-
-Verify that applyMove doesn’t already modify board.Turn internally. If it does, your manual toggle might be causing an unexpected behavior. Ensure there’s a single, clear place where the turn is set based on the move.
-
-Board State Mutation:
-Check that board is updated properly. For instance, passing &board to applyMove might inadvertently lead to unexpected state if applyMove isn’t handling the pointer correctly.
-
-In summary, the engine appears to select white’s moves because either the evaluation in findBestMove is always from white’s perspective or the board state
-(specifically board.Turn) isn’t correctly propagated. Double-check that the turn used for move generation correctly reflects the alternation you expect.
-                */
                 while (true)
                 {
                     findMove();
