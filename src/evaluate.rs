@@ -1,9 +1,10 @@
 use crate::board::{Board, Color};
 use crate::utils;
+use crate::moves::{generate_legal_moves};
 
 // Piece values
 pub const PAWN_VALUE: i32 = 10;
-pub const KNIGHT_VALUE: i32 = 32;
+pub const KNIGHT_VALUE: i32 = 31;
 pub const BISHOP_VALUE: i32 = 33;
 pub const ROOK_VALUE: i32 = 50;
 pub const QUEEN_VALUE: i32 = 90;
@@ -164,22 +165,35 @@ pub fn evaluate_board(board: &Board) -> i32 {
     score -= evaluate_piece(board.bq, QUEEN_VALUE, &QUEEN_TABLE);
     score -= evaluate_king(board.bk, endgame);
 
-    // Event-based scoring
-    if utils::is_checkmate(board) {
-        if board.turn == Color::White {
+    // Event-based scoring - combined check/checkmate/stalemate evaluation
+    let white_in_check = utils::is_king_in_check(board, Color::White);
+    let black_in_check = utils::is_king_in_check(board, Color::Black);
+    
+    if board.turn == Color::White && white_in_check {
+        // White is in check - see if it's checkmate
+        if generate_legal_moves(board).is_empty() {
             score -= CHECKMATE_VALUE;
         } else {
-            score += CHECKMATE_VALUE;
+            score -= CHECK_VALUE;
         }
-    } else if utils::is_stalemate(board) || utils::is_draw(board) {
-        // No adjustment
-    } else {
-        // Bonus for delivering check
-        if utils::is_king_in_check(board, Color::Black) {
+    } else if board.turn == Color::Black && black_in_check {
+        // Black is in check - see if it's checkmate
+        if generate_legal_moves(board).is_empty() {
+            score += CHECKMATE_VALUE;
+        } else {
             score += CHECK_VALUE;
         }
-        if utils::is_king_in_check(board, Color::White) {
-            score -= CHECK_VALUE;
+    } else {
+        // Nobody in check - check for stalemate
+        if generate_legal_moves(board).is_empty() {
+            // Stalemate or insufficient material - handled as draw
+        } else {
+            // Check if opponent is threatening check (non-moving side bonus)
+            if board.turn == Color::White && black_in_check {
+                score += CHECK_VALUE;
+            } else if board.turn == Color::Black && white_in_check {
+                score -= CHECK_VALUE;
+            }
         }
     }
 
